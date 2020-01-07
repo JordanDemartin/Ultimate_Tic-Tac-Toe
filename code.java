@@ -8,7 +8,10 @@ class Player {
         Scanner in = new Scanner(System.in);
         boolean start = true;
         Noeud best_arbre = null;
-
+        int max_depth_first = 6;
+        int max_depth_after = 4;
+        int step = 0;
+        
         /*Case grille[][] = new Case[3][3];
         for(int j = 0; j < 3 ; j++){
             for(int k = 0; k < 3 ; k++){
@@ -22,25 +25,37 @@ class Player {
             int opponentRow = in.nextInt();
             int opponentCol = in.nextInt();
             int best_score = -10000000;
-            int max_depth = 5;
             Noeud arbre = null, new_best_arbre = null;
+            
             /*if(opponentRow != -1 && opponentCol != -1){
                 grille[opponentRow][opponentCol].play(false);
             }*/
             
+            if(start){
+                if( opponentRow == -1 && opponentCol == -1 ){
+                    step = 1;
+                }else{
+                    step = 2;
+                }
+            }else{
+                step+=2;
+            }
+            
+            
             int validActionCount = in.nextInt();
             int choosen_row = 0, choosen_col = 0;
             
+            if(!start && step > 3){
+                    best_arbre.setMaxDepth(max_depth_after);
+                    best_arbre.createChilds();
+            }
+            
             if(!start && best_arbre != null){
                 arbre = best_arbre.getChild(opponentRow,opponentCol);
-                if(arbre == null){
-                    best_arbre.setMaxDepth(3);
-                    best_arbre.createChilds();
-                    arbre = best_arbre.getChild(opponentRow,opponentCol);
-                }
                 best_arbre = arbre;
             }
-            System.err.println("best "+best_arbre+" ar:"+arbre);
+            //System.err.println("best "+best_arbre+" ar:"+arbre);
+            
             
 
             for (int i = 0; i < validActionCount; i++) {
@@ -48,20 +63,26 @@ class Player {
                 int col = in.nextInt();
                 
                 if(start && opponentCol==-1){
-                    arbre = new Noeud(null,row,col,true,1,max_depth,-1,-1);
+                    arbre = new Noeud(null,row,col,true,step,max_depth_first,-1,-1);
                     if(arbre.getScore() > best_score){
                         new_best_arbre = arbre;
                         best_score = arbre.getScore();
                     }
                 }else if(start && opponentCol!=-1){
-                    arbre = new Noeud(null,row,col,true,2,max_depth,opponentRow,opponentCol);
+                    arbre = new Noeud(null,row,col,true,step,max_depth_first,opponentRow,opponentCol);
                     if(arbre.getScore() > best_score){
                         new_best_arbre = arbre;
                         best_score = arbre.getScore();
                     }
                 }else if(!start){
                     arbre = best_arbre.getChild(row,col);
-                    System.err.println(arbre.getScore()+" > "+best_score);
+                    
+                    if(arbre == null){
+                        arbre = best_arbre.getChild(row,col);
+                    }
+
+                    System.err.println("step : "+step+", noeud :"+i+": x_"+row+" y_"+col+", score arbre: "+ arbre.getScore()+", best score :"+best_score);
+
                     if(arbre.getScore() > best_score){
                         new_best_arbre = arbre;
                         best_score = arbre.getScore();
@@ -222,7 +243,7 @@ class Noeud{
     public void updateScore(int score){ // update the score of this node and the score of the previous node
         this.score = score + this.score;
         if(previous_move != null){
-            previous_move.updateScore(this.score);
+            previous_move.updateScore(this.score/2);
         }
     }
 
@@ -249,34 +270,28 @@ class Noeud{
             if(grille[i][0].getPlayed() && grille[i][1].getPlayed() && grille[i][2].getPlayed()){ //check a full row, depends on the value of the i
 
                 if(grille[i][0].getPlayedByMe() && grille[i][1].getPlayedByMe() && grille[i][2].getPlayedByMe()){
-                    return 1000;
+                    score += 10000;
                 }else if(!grille[i][0].getPlayedByMe() && !grille[i][1].getPlayedByMe() && !grille[i][2].getPlayedByMe()){
-                    return -1000;
+                    score += -10000;
                 }
 
-            }
-
-            if(grille[i][0].getPlayed() && grille[i][1].getPlayed()){ // check up and middle of a row (wich row it is depends on i's value)
+            }else if(grille[i][0].getPlayed() && grille[i][1].getPlayed() && !grille[i][2].getPlayed()){ // check up and middle (and not down) of a row  (wich row it is depends on i's value)
                 if(grille[i][0].getPlayedByMe() && grille[i][1].getPlayedByMe()){
-                    return 10;
+                    score += 100;
                 }else if(!grille[i][0].getPlayedByMe() && !grille[i][1].getPlayedByMe()){
-                    return -10;
+                    score += -100;
                 }
-            }
-
-            if(grille[i][0].getPlayed() && grille[i][2].getPlayed()){ // check up and down of a row (wich row it is depends on i's value)
+            }else if(grille[i][0].getPlayed() && grille[i][2].getPlayed() && !grille[i][1].getPlayed()){ // check up and down (and not middle) of a row (wich row it is depends on i's value)
                 if(grille[i][0].getPlayedByMe() && grille[i][2].getPlayedByMe()){
-                    return 10;
+                    score += 100;
                 }else if(!grille[i][0].getPlayedByMe() && !grille[i][2].getPlayedByMe()){
-                    return -10;
+                    score += -100;
                 }
-            }
-
-            if(grille[i][1].getPlayed() && grille[i][2].getPlayed()){ // check middle and down of a row (wich row it is depends on i's value)
+            }else if(grille[i][1].getPlayed() && grille[i][2].getPlayed() && !grille[i][0].getPlayed()){ // check middle and down (and not up) of a row (wich row it is depends on i's value)
                 if(grille[i][1].getPlayedByMe() && grille[i][2].getPlayedByMe()){
-                    return 10;
+                    score += 100;
                 }else if(!grille[i][1].getPlayedByMe() && !grille[i][2].getPlayedByMe()){
-                    return -10;
+                    score += -100;
                 }
             }
 
@@ -284,34 +299,28 @@ class Noeud{
             if(grille[0][i].getPlayed() && grille[1][i].getPlayed() && grille[2][i].getPlayed()){ //check a full column, depends on the value of the i
 
                 if(grille[0][i].getPlayedByMe() && grille[1][i].getPlayedByMe() && grille[2][i].getPlayedByMe()){
-                    return 1000;
+                    score += 10000;
                 }else if(!grille[0][i].getPlayedByMe() && !grille[1][i].getPlayedByMe() && !grille[2][i].getPlayedByMe()){
-                    return -1000;
+                    score += -10000;
                 }
 
-            }
-
-            if(grille[0][i].getPlayed() && grille[1][i].getPlayed()){ // check left and middle of a column (wich column it is depends on i's value)
+            }else if(grille[0][i].getPlayed() && grille[1][i].getPlayed() && !grille[2][i].getPlayed()){ // check left and middle (and not right) of a column (wich column it is depends on i's value)
                 if(grille[0][i].getPlayedByMe() && grille[1][i].getPlayedByMe()){
-                    return 10;
+                    score += 100;
                 }else if(!grille[0][i].getPlayedByMe() && !grille[1][i].getPlayedByMe()){
-                    return -10;
+                    score += -100;
                 }
-            }
-
-            if(grille[0][i].getPlayed() && grille[2][i].getPlayed()){ // check middle and right of a column (wich column it is depends on i's value)
+            }else if(grille[0][i].getPlayed() && grille[2][i].getPlayed() && !grille[1][i].getPlayed()){ // check middle and right (and not left) of a column (wich column it is depends on i's value)
                 if(grille[0][i].getPlayedByMe() && grille[2][i].getPlayedByMe()){
-                    return 10;
+                    score += 100;
                 }else if(!grille[0][i].getPlayedByMe() && !grille[2][i].getPlayedByMe()){
-                    return -10;
+                    score += -100;
                 }
-            }
-
-            if(grille[1][i].getPlayed() && grille[2][i].getPlayed()){ // check left and right of a column (wich column it is depends on i's value)
+            }else if(grille[1][i].getPlayed() && grille[2][i].getPlayed() && !grille[0][i].getPlayed()){ // check left and right (and not middle) of a column (wich column it is depends on i's value)
                 if(grille[1][i].getPlayedByMe() && grille[2][i].getPlayedByMe()){
-                    return 10;
+                    score += 100;
                 }else if(!grille[1][i].getPlayedByMe() && !grille[2][i].getPlayedByMe()){
-                    return -10;
+                    score += -100;
                 }
             }
         }
@@ -320,72 +329,60 @@ class Noeud{
         if(grille[0][0].getPlayed() && grille[1][1].getPlayed() && grille[2][2].getPlayed()){ //full diag 1 ( down right, middle and up left)
 
             if (grille[0][0].getPlayedByMe() && grille[1][1].getPlayedByMe() && grille[2][2].getPlayedByMe()) {
-                return 1000;
+                score += 10000;
             }else if(!grille[0][0].getPlayedByMe() && !grille[1][1].getPlayedByMe() && !grille[2][2].getPlayedByMe()){
-                return -1000;
+                score += -10000;
             }
 
-        }
-
-        if(grille[0][0].getPlayed() && grille[1][1].getPlayed()){ //up left and middle
+        }else if(grille[0][0].getPlayed() && grille[1][1].getPlayed() && !grille[2][2].getPlayed()){ //up left and middle (and not down right)
             if (grille[0][0].getPlayedByMe() && grille[1][1].getPlayedByMe()) {
-                return 10;
+                score += 100;
             }else if(!grille[0][0].getPlayedByMe() && !grille[1][1].getPlayedByMe()){
-                return -10;
+                score += -100;
             }
-        }
-
-        if(grille[0][0].getPlayed() && grille[2][2].getPlayed()){//up left and down right
+        }else if(grille[0][0].getPlayed() && grille[2][2].getPlayed() && !grille[1][1].getPlayed()){//up left and down right (and not middle)
             if (grille[0][0].getPlayedByMe() && grille[2][2].getPlayedByMe()) {
-                return 10;
+                score += 100;
             }else if(!grille[0][0].getPlayedByMe() && !grille[2][2].getPlayedByMe()){
-                return -10;
+                score += -100;
             }
-        }
-
-        if(grille[1][1].getPlayed() && grille[2][2].getPlayed()){//middle and down right
+        }else if(grille[1][1].getPlayed() && grille[2][2].getPlayed() && !grille[0][0].getPlayed()){//middle and down right (and not up left)
             if (grille[1][1].getPlayedByMe() && grille[2][2].getPlayedByMe()) {
-                return 10;
+                score += 100;
             }else if(!grille[1][1].getPlayedByMe() && !grille[2][2].getPlayedByMe()){
-                return -10;
+                score += -100;
             }
         }
 
         // check diag 2
-        if(grille[2][0].getPlayed() && grille[1][1].getPlayed() && grille[0][2].getPlayed()){ //full diag 2 ( down left, middle and up right)
+        if(grille[2][0].getPlayed() && grille[1][1].getPlayed() && grille[0][2].getPlayed()){ //full diag 2 (down left, middle and up right)
 
             if (grille[2][0].getPlayedByMe() && grille[1][1].getPlayedByMe() && grille[0][2].getPlayedByMe()) {
-                return 1000;
+                score += 10000;
             }else if(!grille[2][0].getPlayedByMe() && !grille[1][1].getPlayedByMe() && !grille[0][2].getPlayedByMe()){
-                return -1000;
+                score += -10000;
             }
 
-        }
-
-        if(grille[2][0].getPlayed() && grille[1][1].getPlayed()){ //down left and middle
+        }else if(grille[2][0].getPlayed() && grille[1][1].getPlayed() && !grille[0][2].getPlayed()){ //down left and middle (and not up right)
             if (grille[2][0].getPlayedByMe() && grille[1][1].getPlayedByMe()) {
-                return 10;
+                score += 100;
             }else if(!grille[2][0].getPlayedByMe() && !grille[1][1].getPlayedByMe()){
-                return -10;
+                score += -100;
             }
-        }
-
-        if(grille[2][0].getPlayed() && grille[0][2].getPlayed()){ //down left and up right
+        }else if(grille[2][0].getPlayed() && grille[0][2].getPlayed() && !grille[1][1].getPlayed()){ //down left and up right (and not middle)
             if (grille[2][0].getPlayedByMe() && grille[0][2].getPlayedByMe()) {
-                return 10;
+                score += 100;
             }else if(!grille[2][0].getPlayedByMe() && !grille[0][2].getPlayedByMe()){
-                return -10;
+                score += -100;
             }
-        }
-
-        if(grille[1][1].getPlayed() && grille[0][2].getPlayed()){ //middle and up right
+        }else if(grille[1][1].getPlayed() && grille[0][2].getPlayed() && !grille[2][0].getPlayed()){ //middle and up right (and not down left)
             if (grille[1][1].getPlayedByMe() && grille[0][2].getPlayedByMe()) {
-                return 10;
+                score += 100;
             }else if(!grille[1][1].getPlayedByMe() && !grille[0][2].getPlayedByMe()){
-                return -10;
+                score += -100;
             }
         }
 
-        return 0;
+        return score;
     }
 }
