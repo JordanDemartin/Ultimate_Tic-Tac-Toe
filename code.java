@@ -7,29 +7,21 @@ class Player {
     public static void main(String args[]) {
         Scanner in = new Scanner(System.in);
         boolean start = true;
-        Noeud best_arbre = null;
-        int max_depth_first = 6;
-        int max_depth_after = 4;
+        Noeud best_arbre = null; // le meilleur arbre choisit / état actuel
+        int max_depth_first = 6; // profondeur de l'arbre exploré au premier tour
+        int max_depth_after = 4; // profondeur de l'arbre exploré à chaque fois qu'on approfondis
         int step = 0;
-        
-        /*Case grille[][] = new Case[3][3];
-        for(int j = 0; j < 3 ; j++){
-            for(int k = 0; k < 3 ; k++){
-                grille[j][k] = new Case(false, false);
-            }
-        }*/
-        
-        
+
+
         // game loop
         while (true) {
             int opponentRow = in.nextInt();
             int opponentCol = in.nextInt();
+            int validActionCount = in.nextInt();
             int best_score = -10000000;
-            Noeud arbre = null, new_best_arbre = null;
+            Noeud arbre = null; // variable contenant temporairement des arbres
+            Noeud new_best_arbre = null; // variable contenant le candidat au titre de meilleur arbre
             
-            /*if(opponentRow != -1 && opponentCol != -1){
-                grille[opponentRow][opponentCol].play(false);
-            }*/
             
             if(start){
                 if( opponentRow == -1 && opponentCol == -1 ){
@@ -42,39 +34,39 @@ class Player {
             }
             
             
-            int validActionCount = in.nextInt();
-            int choosen_row = 0, choosen_col = 0;
-            
-            if(!start && step > 3){
+            if(!start && step >= ( max_depth_first-( max_depth_after / 2 ) ) ){ // appronfondis l'arbre si nécessaire
                     best_arbre.setMaxDepth(max_depth_after);
                     best_arbre.createChilds();
             }
             
-            if(!start && best_arbre != null){
+            if(!start && best_arbre != null){ // avance dans l'arbre par rapport au coup du second joueur
                 arbre = best_arbre.getChild(opponentRow,opponentCol);
                 best_arbre = arbre;
             }
-            //System.err.println("best "+best_arbre+" ar:"+arbre);
-            
-            
 
-            for (int i = 0; i < validActionCount; i++) {
+
+            for (int i = 0; i < validActionCount; i++) { // test des possibilités, utilisation de l'arbre
                 int row = in.nextInt();
                 int col = in.nextInt();
                 
-                if(start && opponentCol==-1){
+                if(start && opponentCol==-1){ //initialisation arbre, bot commence en premier, premier choix
+
                     arbre = new Noeud(null,row,col,true,step,max_depth_first,-1,-1);
                     if(arbre.getScore() > best_score){
                         new_best_arbre = arbre;
                         best_score = arbre.getScore();
                     }
-                }else if(start && opponentCol!=-1){
+
+                }else if(start && opponentCol!=-1){ //initialisation arbre, bot ne commence pas en premier, premier choix
+
                     arbre = new Noeud(null,row,col,true,step,max_depth_first,opponentRow,opponentCol);
                     if(arbre.getScore() > best_score){
                         new_best_arbre = arbre;
                         best_score = arbre.getScore();
                     }
-                }else if(!start){
+
+                }else if(!start){ //recherche du meilleur choix
+
                     arbre = best_arbre.getChild(row,col);
                     
                     if(arbre == null){
@@ -87,21 +79,15 @@ class Player {
                         new_best_arbre = arbre;
                         best_score = arbre.getScore();
                     }
+
                 }
             }
-            start = false;
-            best_arbre = new_best_arbre;
-            System.err.println(best_score + " ");
-            //System.err.println(choosen_row + " " + choosen_col);
 
-            //grille[choosen_row][choosen_col].play(true);
-            
-            /*for(int j = 0; j < 3 ; j++){
-                for(int k = 0; k < 3 ; k++){
-                    System.err.print(grille[j][k].print());
-                }
-                System.err.println("");
-            }*/
+            start = false;
+            best_arbre = new_best_arbre; // le candidat au titre de meilleur arbre prends la place de celui-ci et l'action décrite dans le noeud est effectué
+
+            System.err.println("best score final : "+best_score+", choosen_x : "+best_arbre.getX()+", choosen_y : "+best_arbre.getY());
+
             
             System.out.println(best_arbre.getX() + " " + best_arbre.getY());
             
@@ -110,24 +96,24 @@ class Player {
 }
 
 class Case{
-    private boolean played;
-    private boolean played_by_me;
+    private boolean played; // décrit si la case a été joué
+    private boolean played_by_me; // décrit si la case est joué par le bot (true) ou l'autre joueur (false)
     
-    public Case(boolean played, boolean played_by_me){
+    public Case(boolean played, boolean played_by_me){ // constructeur
         this.played = played;
         this.played_by_me = played_by_me;
     }
     
-    public void play(boolean played_by_me){
+    public void play(boolean played_by_me){ // joue la case, décrit par qui cette case est joué
         this.played = true;
         this.played_by_me = played_by_me;
     }
     
-    public boolean getPlayed(){
+    public boolean getPlayed(){ // recupère la valeur de l'attribut played
         return this.played;
     }
     
-    public boolean getPlayedByMe(){
+    public boolean getPlayedByMe(){ // recupère la valeur de l'attribut played_by_me
         return this.played_by_me;
     }
     
@@ -160,7 +146,7 @@ class Noeud{
         this.childs = new Noeud[(9-this.step)];
         this.max_depth = max_depth;
 
-        if(this.previous_move == null){
+        if(this.previous_move == null){ // si on est au début de l'arbre, initialise la grille
 
             this.grille = new Case[3][3];
             for(int j = 0; j < 3 ; j++){
@@ -168,11 +154,12 @@ class Noeud{
                     this.grille[j][k] = new Case(false, false);
                 }
             }
-            if(my_turn && step == 2 && start_opponent_x != -1 && start_opponent_y != -1){
+
+            if(my_turn && step == 2 && start_opponent_x != -1 && start_opponent_y != -1){ // si l'autre joueur a déjà joué, marque son coup dans la grille
                 this.grille[start_opponent_x][start_opponent_y].play(false);
             }
 
-        }else{
+        }else{ // si on n'est pas au début de l'arbre, récupère la grille du noeud parent
 
             this.grille = new Case[3][3];
             for(int j = 0; j < 3 ; j++){
@@ -183,25 +170,25 @@ class Noeud{
 
         }
 
-        this.grille[x_move][y_move].play(my_turn);
+        this.grille[x_move][y_move].play(my_turn); // joue le coup correspondant à ce noeud
 
         /*System.err.println(childs.length + " step : "+ this.step + " max_depth = " + max_depth + " previous_move ? " + (previous_move != null));
         for(int j = 0; j < 3 ; j++){
-                for(int k = 0; k < 3 ; k++){
-                    System.err.print(grille[j][k].print());
-                }
-                System.err.println("");
-            }*/
+            for(int k = 0; k < 3 ; k++){
+                System.err.print(grille[j][k].print());
+            }
+            System.err.println("");
+        }*/
 
-        updateScore(calculateScore());
+        updateScore(calculateScore()); // calcul le score correspondant à cette disposition et passe une partie de ce score à son parent
 
-        if((score > -1000 && score < 1000) && max_depth > 1){
+        if((this.score > -1000 && this.score < 1000) && this.max_depth > 1){ // si l'abre peut encore continuer et qu'il n'y pas encore de fin de partie, continue de creuser
             createChilds();
         }
 
     }
 
-    public boolean getMyTurn(){ // get the boolean that show whether it's our bot turn in this node
+    public boolean getMyTurn(){ // get the boolean that show whether it's our bot's turn in this node
         return this.my_turn;
     }
 
@@ -213,7 +200,7 @@ class Noeud{
         return this.step;
     }
 
-    public Noeud getChild(int x, int y){ // get a child of this node that the coordinate x and y
+    public Noeud getChild(int x, int y){ // get a child of this node that have the coordinate x and y
         if(this.childs[0] != null){
             for(int i = 0 ; i < this.childs.length ; i++){
                 if(this.childs[i].getX() == x && this.childs[i].getY() == y){
@@ -243,7 +230,7 @@ class Noeud{
     public void updateScore(int score){ // update the score of this node and the score of the previous node
         this.score = score + this.score;
         if(previous_move != null){
-            previous_move.updateScore(this.score/2);
+            previous_move.updateScore(this.score/2); // je ne passe que la moitié du score pour qu'une victoire à l'étape x est plus d'importance qu'une victoire à l'étape x + 1
         }
     }
 
