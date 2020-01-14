@@ -248,7 +248,7 @@ class Noeud{
 
     }
 
-    private int calculateScore() { // 0 rien, 1 victoire moi, 2 défaite
+    private int calculateScore() {
         int score = 0;
 
         for (int i = 0; i < 3; i++) {
